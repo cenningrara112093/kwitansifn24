@@ -1,0 +1,29 @@
+{
+  "build": {
+    "distDir": "../",
+    "devPath": "../"
+  },
+  "package": {
+    "productName": "Kwitansi Klinik",
+    "version": "1.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": true
+    },
+    "bundle": {
+      "active": true,
+      "category": "DeveloperTool",
+      "identifier": "com.klinik.kwitansi",
+      "targets": "all"
+    },
+    "windows": [
+      {
+        "title": "Kwitansi Klinik",
+        "width": 1024,
+        "height": 768,
+        "resizable": true
+      }
+    ]
+  }
+}

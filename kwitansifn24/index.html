@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kwitansi Klinik - Slim Green Standalone Edition</title>
+  <!-- Library html2pdf untuk ekspor PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+    :root {
+      /* SKEMA WARNA HIJAU SEGAR (LIGHT & VIBRANT) */
+      --bg-gradient: linear-gradient(135deg, #187700 0%, #3cb000 50%, #6cd100 100%);
+      --frame-bg: linear-gradient(160deg, #1b7a00 0%, #35a400 100%);
+      --control-bg: rgba(0, 0, 0, 0.22);
+      
+      --accent-green: #30a100;
+      --bright-lime: #42c200;
+      --btn-green: linear-gradient(180deg, #4ed000 0%, #2f9800 100%);
+      
+      --card-white: #ffffff;
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --border-light: #e2e8f0;
+      --border-glass: rgba(255, 255, 255, 0.2);
+    }
+
+    * { 
+      box-sizing: border-box; 
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; 
+    }
+
+    ::placeholder {
+      color: #94a3b8 !important;
+      font-weight: 600;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      margin: 0;
+      padding: 16px;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    /* BINGKAI UTAMA KWITANSI */
+    .app-frame {
+      width: 100%;
+      max-width: 680px; 
+      background: var(--frame-bg);
+      border-radius: 20px;
+      padding: 18px;
+      border: 2px solid var(--border-glass);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.35);
+    }
+
+    /* BINGKAI FORM DATA TERSIMPAN */
+    .data-frame {
+      max-width: 850px !important;
+    }
+
+    /* WRAPPER KONTROL PANEL */
+    .top-control-wrapper {
+      position: relative;
+      width: 100%;
+      margin: 0 auto 16px auto;
+    }
+
+    /* BADAN KONTROL PANEL */
+    .control-panel-card {
+      background: var(--control-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-glass);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .top-control-wrapper.panel-hidden .control-panel-card {
+      display: none;
+    }
+
+    /* GRID PENGATURAN KONTROL */
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    .control-group label { 
+      font-size: 10px; 
+      font-weight: 700; 
+      color: rgba(255, 255, 255, 0.9); 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    
+    .control-group select {
+      font-size: 11px; font-weight: 600; color: #ffffff;
+      padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border-glass);
+      background: rgba(0, 0, 0, 0.25); outline: none; cursor: pointer; height: 32px;
+      transition: all 0.2s ease;
+    }
+    .control-group select:hover { background: rgba(0, 0, 0, 0.35); }
+    .control-group select option { background: #1b7a00; color: #ffffff; }
+
+    /* TOMBOL UNGGAH DENGAN HITBOX RESPROSIF & EFEK KLIK PENUH */
+    .file-upload-container { 
+      position: relative; 
+      width: 100%; 
+      height: 32px; 
+      display: block;
+      cursor: pointer;
+    }
+    .file-upload-container input[type="file"] { 
+      position: absolute; 
+      top: 0;
+      left: 0;
+      opacity: 0; 
+      width: 100%; 
+      height: 100%; 
+      cursor: pointer; 
+      z-index: 2; 
+    }
+    .file-upload-btn {
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between;
+      font-size: 10px; 
+      font-weight: 700; 
+      color: rgba(255, 255, 255, 0.95);
+      padding: 0 10px; 
+      border-radius: 8px; 
+      background: rgba(255, 255, 255, 0.08); 
+      border: 1px solid var(--border-glass); 
+      height: 100%;
+      transition: transform 0.1s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.1s ease;
+      user-select: none;
+      pointer-events: none; /* Memastikan interaksi klik diteruskan ke input file */
+    }
+
+    .file-upload-container:hover .file-upload-btn {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Umpan balik visual saat tombol unggah ditekan/diklik */
+    .file-upload-container:active .file-upload-btn {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 0.3);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Indikator visual saat file telah diunggah */
+    .file-upload-btn.has-file {
+      background: rgba(48, 161, 0, 0.4);
+      border-color: rgba(108, 209, 0, 0.6);
+      color: #ffffff;
+    }
+
+    .control-group input[type="range"] { accent-color: #6cd100; height: 5px; cursor: pointer; }
+
+    /* TOMBOL AKSI PANEL (MODERN & ELEGAN) */
+    .btn-action-group { 
+      display: flex; 
+      flex-wrap: wrap; 
+      justify-content: center; 
+      gap: 8px; 
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-pill {
+      height: 32px; 
+      padding: 0 14px; 
+      border-radius: 8px; 
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1) !important; 
+      color: #ffffff !important;
+      font-weight: 700 !important; 
+      font-size: 10px; 
+      cursor: pointer;
+      display: inline-flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 6px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      transition: transform 0.1s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.1s ease;
+      backdrop-filter: blur(4px);
+      user-select: none;
+    }
+
+    .btn-pill:hover { 
+      background: rgba(255, 255, 255, 0.22) !important;
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Umpan balik visual saat tombol aksi diklik */
+    .btn-pill:active { 
+      transform: translateY(0) scale(0.95) !important; 
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* Varian Tombol Utama (Accent Green) */
+    .btn-primary-main {
+      background: linear-gradient(135deg, rgba(66, 194, 0, 0.35) 0%, rgba(48, 161, 0, 0.45) 100%) !important;
+      border: 1px solid rgba(108, 209, 0, 0.4) !important;
+    }
+
+    .btn-primary-main:hover {
+      background: linear-gradient(135deg, rgba(66, 194, 0, 0.6) 0%, rgba(48, 161, 0, 0.7) 100%) !important;
+      border-color: rgba(108, 209, 0, 0.7) !important;
+      box-shadow: 0 4px 12px rgba(66, 194, 0, 0.25);
+    }
+
+    /* Varian Tombol Hapus */
+    .btn-delete-main {
+      background: rgba(239, 68, 68, 0.18) !important;
+      border: 1px solid rgba(239, 68, 68, 0.35) !important;
+      color: #fca5a5 !important;
+    }
+
+    .btn-delete-main:hover {
+      background: #dc2626 !important;
+      color: #ffffff !important;
+      border-color: #ef4444 !important;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    /* Varian Tombol Sekunder */
+    .btn-secondary-main {
+      background: rgba(148, 163, 184, 0.15) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      color: #cbd5e1 !important;
+    }
+
+    .btn-secondary-main:hover {
+      background: rgba(148, 163, 184, 0.3) !important;
+      color: #ffffff !important;
+    }
+
+    /* TOMBOL TOGGLE PANEL */
+    .toggle-panel-btn {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
+      border: none;
+      border-radius: 0 0 8px 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      transition: all 0.2s ease;
+    }
+
+    .toggle-panel-btn:hover {
+      background: #ffffff;
+      transform: translateX(-50%) translateY(1px);
+    }
+
+    .arrow-icon { width: 14px; height: 14px; color: var(--accent-green); transition: transform 0.3s ease; }
+    .top-control-wrapper.panel-hidden .arrow-icon { transform: rotate(180deg); }
+
+    /* BADAN KWITANSI */
+    .receipt-container {
+      position: relative;
+      background: var(--card-white);
+      border-radius: 16px;
+      padding: 24px 26px; 
+      overflow: hidden;
+      color: var(--text-dark);
+      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .watermark-wrapper {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      pointer-events: none; z-index: 0; width: 100%; height: 100%;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .watermark-img { width: 100%; height: 100%; object-fit: contain; opacity: 0.05; }
+
+    /* KOP DENGAN LOGO DEKAT TULISAN KLINIK */
+    .header-kop { 
+      position: relative; 
+      z-index: 1; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      padding-bottom: 12px; 
+      border-bottom: 2px dashed #cbd5e1; 
+      margin-bottom: 16px; 
+    }
+
+    .header-top-title { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 10px; 
+      width: fit-content;
+      margin: 0 auto;
+    }
+
+    .header-logo-wrapper { 
+      width: 42px; 
+      height: 42px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      background: #f1f5f9; 
+      border-radius: 8px; 
+      padding: 3px; 
+      border: 1px solid var(--border-light); 
+      flex-shrink: 0; 
+    }
+
+    .header-logo { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+    .clinic-title-input { 
+      font-size: 20px; 
+      font-weight: 800; 
+      color: var(--accent-green); 
+      border: none; 
+      outline: none; 
+      background: transparent; 
+      text-align: left; 
+      width: 270px;
+      max-width: 100%;
+    }
+
+    .clinic-address-input { 
+      font-size: 11px; 
+      color: var(--text-muted); 
+      font-weight: 700; 
+      border: none; 
+      outline: none; 
+      background: transparent; 
+      width: 100%; 
+      text-align: center; 
+      margin-top: 4px; 
+    }
+    
+    .doc-title-container { position: relative; z-index: 1; text-align: center; margin: 10px 0 14px 0; }
+    .doc-title { 
+      display: inline-block; 
+      background: var(--btn-green); 
+      color: #ffffff; 
+      font-size: 12px; 
+      font-weight: 800; 
+      letter-spacing: 2px; 
+      padding: 5px 24px; 
+      border-radius: 6px; 
+      text-transform: uppercase; 
+      box-shadow: 0 4px 8px rgba(48, 161, 0, 0.25);
+    }
+    
+    .info-card { 
+      position: relative; z-index: 1; background: #f8fafc; 
+      border-radius: 10px; padding: 12px 16px; border: 1px solid var(--border-light); 
+      border-left: 5px solid var(--accent-green); margin-bottom: 14px; 
+    }
+    .info-table { width: 100%; border-collapse: collapse; }
+    .info-table td { padding: 3px 0; font-size: 12px; vertical-align: middle; }
+    .info-table td.label { width: 115px; font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-table td.colon { width: 10px; font-weight: 800; color: var(--text-dark); }
+    .info-table input { width: 100%; border: 1px solid var(--border-light); background: #ffffff; border-radius: 5px; font-size: 12px; font-weight: 700; outline: none; padding: 5px 10px; color: var(--text-dark); }
+    
+    .terbilang-box { 
+      font-weight: 800; color: var(--accent-green); background: #f0fdf4; 
+      border: 1px solid #bbf7d0; padding: 5px 10px; border-radius: 5px; 
+      display: inline-block; width: 100%; font-style: italic; font-size: 11px; 
+    }
+    
+    .section-header {
+      position: relative; z-index: 1; background: #f1f8e9; color: var(--accent-green); 
+      font-size: 10px; font-weight: 800; padding: 6px 12px; border-radius: 6px; 
+      margin-top: 14px; margin-bottom: 4px; text-transform: uppercase; 
+      display: flex; justify-content: space-between; align-items: center; 
+      border-left: 5px solid var(--accent-green); border: 1px solid #dcedc8; border-left-width: 5px;
+    }
+
+    .subsection-header {
+      position: relative; z-index: 1; background: #f8fafc; color: var(--text-dark); 
+      border: 1px solid var(--border-light); font-size: 9.5px; font-weight: 800; 
+      padding: 4px 10px; border-radius: 5px; margin-top: 8px; margin-bottom: 4px; 
+      text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .btn-add-section {
+      background: var(--btn-green) !important; 
+      color: #ffffff !important; 
+      border: none !important; 
+      border-radius: 5px; font-size: 9px; font-weight: 800; padding: 3px 8px; cursor: pointer;
+      text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+      transition: transform 0.1s ease;
+    }
+    .btn-add-section:hover { transform: scale(1.03); }
+    .btn-add-section:active { transform: scale(0.95); }
+
+    .detail-table { position: relative; z-index: 1; width: 100%; table-layout: fixed; border-collapse: collapse; }
+    .detail-table th { padding: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); text-align: left; border-bottom: 2px solid var(--border-light); }
+    .detail-table td { padding: 5px 6px; font-size: 11px; border-bottom: 1px solid #f1f5f9; color: var(--text-dark); font-weight: 700; }
+    .detail-table td.no-col { width: 28px; text-align: center; font-weight: 800; color: var(--text-muted); }
+    
+    .item-input, .amount-input { width: 100%; border: 1px solid transparent; border-radius: 4px; outline: none; font-size: 11px; font-weight: 700; background: transparent; color: var(--text-dark); padding: 3px 5px; }
+    
+    #bodyResep .item-input {
+      padding-left: 22px !important;
+    }
+
+    .amount-input { text-align: right; font-weight: 800; }
+    .item-input:focus, .amount-input:focus { border-color: var(--accent-green); background: #ffffff; }
+    
+    .total-row td { 
+      background: #f8fafc !important; color: var(--text-dark) !important; font-weight: 800; 
+      padding: 10px 12px !important; border-radius: 6px; border-bottom: 3px solid var(--accent-green) !important;
+      border-top: 2px solid var(--border-light) !important;
+    }
+    .total-label { font-size: 11px; font-weight: 800; color: var(--text-dark); }
+    .grand-total-val { font-size: 14px; font-weight: 800; color: var(--accent-green) !important; }
+
+    .footer-section { position: relative; z-index: 1; margin-top: 18px; display: flex; justify-content: flex-start; }
+    .signature-container { 
+      width: 200px; text-align: center; position: relative; background: #f8fafc; 
+      padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-light); 
+      border-top: 4px solid var(--accent-green);
+    }
+    .stamp-wrapper { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 1; }
+    .stamp-img { width: 110px; height: auto; object-fit: contain; opacity: 0.85; }
+    .date-input { position: relative; z-index: 2; border: none; outline: none; font-size: 10px; font-weight: 800; width: 100%; margin-bottom: 3px; background: transparent; color: var(--text-muted); text-align: center; }
+    .signature-title { position: relative; z-index: 2; font-size: 10px; font-weight: 800; margin-bottom: 3px; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px; }
+    .signature-box { position: relative; padding-top: 24px; z-index: 2; }
+    .admin-name-input { width: 100%; border: none; border-bottom: 2px solid var(--accent-green); font-size: 11px; font-weight: 800; outline: none; background: transparent; color: var(--text-dark); text-align: center; }
+
+    .row-actions { border: none !important; background: transparent !important; width: 25px; text-align: center; }
+    .btn-del-row { color: #ef4444; cursor: pointer; font-weight: 800; border: none; background: #fee2e2; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; transition: all 0.15s ease; }
+    .btn-del-row:hover { background: #ef4444; color: #ffffff; }
+
+    /* MODAL DIALOG NOTIFIKASI */
+    .custom-modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 9999;
+      display: none;
+      backdrop-filter: blur(4px);
+    }
+    .custom-modal-overlay.active { display: flex; }
+    .custom-modal-card {
+      width: 88%; max-width: 320px; background: #ffffff; border-radius: 14px; padding: 18px; 
+      text-align: center; border-top: 4px solid var(--accent-green); color: var(--text-dark);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    }
+    .custom-modal-icon { font-size: 28px; margin-bottom: 4px; }
+    .custom-modal-title { font-size: 13px; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; text-transform: uppercase; }
+    .custom-modal-body { font-size: 11px; font-weight: 700; color: var(--text-muted); line-height: 1.4; margin-bottom: 14px; }
+    .custom-modal-actions { display: flex; justify-content: center; gap: 6px; }
+
+    .empty-print-hide { display: none !important; }
+    
+    /* MODUS CETAK */
+    @media print {
+      @page { margin: 8mm auto; size: portrait; }
+      html, body { background: #ffffff !important; padding: 0 !important; margin: 0 !important; color: #000000 !important; font-size: 9.5pt !important; }
+      .app-frame { background: transparent !important; border: none !important; padding: 0 !important; max-width: 100% !important; box-shadow: none !important; }
+      .top-control-wrapper, .row-actions, .custom-modal-overlay, .btn-add-section, #dataFormFrame { display: none !important; }
+      
+      .receipt-container { 
+        border: none !important; 
+        background: #ffffff !important; 
+        width: 100% !important; 
+        max-width: 160mm !important; 
+        margin: 0 auto !important; 
+        padding: 0 !important; 
+        border-radius: 0 !important; 
+        color: #000000 !important; 
+        box-shadow: none !important; 
+      }
+      
+      .watermark-wrapper { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: -1 !important; display: flex !important; justify-content: center !important; align-items: center !important; }
+      .header-kop { padding-bottom: 4px !important; margin-bottom: 6px !important; border-bottom: 2px solid #000000 !important; }
+      .header-top-title { margin: 0 auto !important; }
+      .header-logo-wrapper { width: 34px !important; height: 34px !important; border: none !important; background: transparent !important; }
+      .clinic-title-input { font-size: 14pt !important; font-weight: 800 !important; color: #000000 !important; width: auto !important; }
+      .clinic-address-input { font-size: 8pt !important; color: #000000 !important; margin-top: 1px !important; }
+      .doc-title-container { margin: 4px 0 6px 0 !important; }
+      .doc-title { background: #000000 !important; color: #ffffff !important; border: none !important; padding: 2px 16px !important; font-size: 9pt !important; letter-spacing: 1px !important; box-shadow: none !important; }
+      .info-card { background: transparent !important; border: 1px solid #000000 !important; border-radius: 4px !important; padding: 6px 10px !important; margin-bottom: 8px !important; }
+      .info-table td { padding: 1px 0 !important; font-size: 8.5pt !important; }
+      .info-table td.label { width: 100px !important; font-size: 8pt !important; color: #000000 !important; }
+      .info-table td.colon { color: #000000 !important; }
+      .terbilang-box { background: transparent !important; border: none !important; padding: 0 !important; color: #000000 !important; font-size: 8pt !important; }
+      .section-header { background: transparent !important; color: #000000 !important; border: none !important; border-bottom: 1.5px solid #000000 !important; border-radius: 0 !important; padding: 2px 0 !important; margin-top: 8px !important; margin-bottom: 2px !important; font-size: 8pt !important; font-weight: 800 !important; }
+      .subsection-header { background: transparent !important; color: #000000 !important; border: none !important; border-bottom: 1px solid #666666 !important; border-radius: 0 !important; padding: 2px 0 !important; margin-top: 6px !important; margin-bottom: 2px !important; font-size: 7.5pt !important; }
+      .detail-table th { background: transparent !important; color: #000000 !important; border-bottom: 1px solid #000000 !important; padding: 2px 4px !important; font-size: 7.5pt !important; }
+      .detail-table td { background: transparent !important; border: none !important; border-bottom: 1px solid #cccccc !important; color: #000000 !important; padding: 2px 4px !important; font-size: 8pt !important; }
+      .item-input, .amount-input, .info-table input, .admin-name-input, .date-input { color: #000000 !important; background: transparent !important; border: none !important; padding: 0 !important; font-size: 8pt !important; }
+      #bodyResep .item-input { padding-left: 22px !important; }
+      .total-row td { background: transparent !important; color: #000000 !important; border-top: 1.5px solid #000000 !important; border-bottom: 1.5px solid #000000 !important; border-radius: 0 !important; padding: 4px 6px !important; }
+      .total-label { font-size: 8.5pt !important; font-weight: 800 !important; color: #000000 !important; }
+      .grand-total-val { font-size: 10.5pt !important; font-weight: 800 !important; color: #000000 !important; }
+      .footer-section { margin-top: 10px !important; }
+      .signature-container { background: transparent !important; border: 1px solid #000000 !important; border-radius: 4px !important; padding: 6px 10px !important; width: 160px !important; }
+      .stamp-img { width: 75px !important; }
+      .date-input { font-size: 7.5pt !important; margin-bottom: 2px !important; }
+      .signature-title { font-size: 7.5pt !important; margin-bottom: 2px !important; color: #000000 !important; }
+      .signature-box { padding-top: 16px !important; }
+      .admin-name-input { border-bottom: 1px solid #000000 !important; font-size: 8pt !important; }
+
+      #secRawatInap .section-header, #secRawatInap .detail-table thead,
+      #secApotek .section-header, #subApotek .subsection-header, #subApotek .detail-table thead,
+      #subResep .subsection-header, #subResep .detail-table thead { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MODAL DIALOG NOTIFIKASI/KONFIRMASI -->
+  <div class="custom-modal-overlay" id="customModal">
+    <div class="custom-modal-card">
+      <div class="custom-modal-icon" id="modalIcon">⚠️</div>
+      <div class="custom-modal-title" id="modalTitle">Konfirmasi</div>
+      <div class="custom-modal-body" id="modalBody">Pesan konfirmasi.</div>
+      <div class="custom-modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <!-- FORM 1: BINGKAI UTAMA KWITANSI -->
+  <div class="app-frame" id="receiptAppFrame">
+
+    <!-- KONTROL PANEL -->
+    <div class="top-control-wrapper" id="topControlWrapper">
+      <div class="control-panel-card" id="controlPanelCard">
+        <div class="control-grid">
+          <div class="control-group">
+            <label for="receiptSelect">Pilih Kwitansi</label>
+            <select id="receiptSelect" onchange="switchReceipt(this.value)"></select>
+          </div>
+
+          <!-- FITUR PENCARIAN NO. RM -->
+          <div class="control-group">
+            <label for="searchRmInput">Cari No. RM</label>
+            <div style="display:flex; gap:4px;">
+              <input type="text" id="searchRmInput" placeholder="Ketik No. RM..." style="width: 100%; border-radius:8px; border:1px solid var(--border-glass); background:rgba(0,0,0,0.25); color:#fff; padding:0 8px; font-size:11px; outline:none;">
+              <button class="btn-pill" type="button" onclick="searchByRm()" style="height:32px; padding:0 10px;">🔍</button>
+            </div>
+          </div>
+
+          <!-- OPSI UNGGAH: DIHUBUNGKAN PENUH KE TAG LABEL UNTUK AREA KLIK SEAMLESS -->
+          <div class="control-group">
+            <label for="logoInput">Logo Klinik</label>
+            <label class="file-upload-container" for="logoInput">
+              <div class="file-upload-btn" id="logoBtnUI">
+                <span id="logoBtnText">Unggah Logo</span>
+                <span id="logoBtnIcon">📁</span>
+              </div>
+              <input type="file" id="logoInput" accept="image/*">
+            </label>
+          </div>
+
+          <div class="control-group">
+            <label for="watermarkInput">Watermark BG</label>
+            <label class="file-upload-container" for="watermarkInput">
+              <div class="file-upload-btn" id="watermarkBtnUI">
+                <span id="watermarkBtnText">Unggah Watermark</span>
+                <span id="watermarkBtnIcon">🖼️</span>
+              </div>
+              <input type="file" id="watermarkInput" accept="image/*">
+            </label>
+          </div>
+
+          <div class="control-group">
+            <label for="stampInput">Stempel Klinik</label>
+            <label class="file-upload-container" for="stampInput">
+              <div class="file-upload-btn" id="stampBtnUI">
+                <span id="stampBtnText">Unggah Stempel</span>
+                <span id="stampBtnIcon">📁</span>
+              </div>
+              <input type="file" id="stampInput" accept="image/*">
+            </label>
+          </div>
+
+          <div class="control-group">
+            <label for="watermarkSize">Ukuran Watermark</label>
+            <input type="range" id="watermarkSize" min="50" max="250" value="100">
+          </div>
+
+          <div class="control-group">
+            <label for="watermarkOpacity">Transparansi BG</label>
+            <input type="range" id="watermarkOpacity" min="0.02" max="0.5" step="0.01" value="0.05">
+          </div>
+
+          <div class="control-group">
+            <label for="stampSize">Ukuran Stempel</label>
+            <input type="range" id="stampSize" min="70" max="180" value="110">
+          </div>
+        </div>
+
+        <!-- TOMBOL AKSI PANEL -->
+        <div class="btn-action-group">
+          <button class="btn-pill btn-primary-main" type="button" onclick="createNewReceipt()">➕ Kwitansi Baru</button>
+          <button class="btn-pill" type="button" onclick="showDataForm()">📊 Lihat Data</button>
+          <button class="btn-pill btn-primary-main" type="button" id="btnPrintAction">🖨️ Cetak</button>         
+          <button class="btn-pill" type="button" onclick="confirmResetAll()">🔄 Reset Data</button>
+          <button class="btn-pill btn-delete-main" type="button" onclick="deleteCurrentReceipt()">🗑️ Hapus</button>
+        </div>
+      </div>
+
+      <!-- TOMBOL TOGGLE PANEL -->
+      <button class="toggle-panel-btn" id="togglePanelBtn" onclick="togglePanel()" title="Sembunyikan/Tampilkan Kontrol Panel">
+        <svg class="arrow-icon" id="toggleIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+      </button>
+    </div>
+
+    <!-- BADAN KWITANSI -->
+    <div class="receipt-container">
+      <div class="watermark-wrapper" id="watermarkWrapper">
+        <img id="watermarkImg" class="watermark-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%2330a100'/><path d='M35 50 L45 60 L65 40' fill='none' stroke='%23ffffff' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/></svg>" alt="Watermark">
+      </div>
+
+      <!-- HEADER KOP DENGAN LOGO DEKAT TULISAN -->
+      <div class="header-kop">
+        <div class="header-top-title">
+          <div class="header-logo-wrapper">
+            <img id="logoImg" class="header-logo" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%2330a100'/><path d='M35 50 L45 60 L65 40' fill='none' stroke='%23ffffff' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/></svg>" alt="Logo">
+          </div>
+          <input type="text" id="clinicTitle" class="clinic-title-input" value="KLINIK UTAMA FN 24">
+        </div>
+        <input type="text" id="clinicAddress" class="clinic-address-input" value="JL. Silas Papare Serui – Papua • admin@klinikfn24.com • 0811498548">
+      </div>
+
+      <div class="doc-title-container">
+        <div class="doc-title">KWITANSI</div>
+      </div>
+
+      <div class="info-card">
+        <table class="info-table">
+          <tr>
+            <td class="label">No. RM</td>
+            <td class="colon">:</td>
+            <td><input type="text" id="patientRm" placeholder="Nomor Rekam Medis..."></td>
+          </tr>
+          <tr>
+            <td class="label">Telah Terima Dari</td>
+            <td class="colon">:</td>
+            <td><input type="text" id="patientName" placeholder="Nama pembayar / pasien..."></td>
+          </tr>
+          <tr>
+            <td class="label">Sejumlah</td>
+            <td class="colon">:</td>
+            <td><div class="terbilang-box" id="terbilangText">Nol Rupiah</div></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TINDAKAN -->
+      <div class="section-wrapper" id="secTindakan">
+        <div class="section-header">
+          <span>1. KETERANGAN TINDAKAN</span>
+          <button type="button" class="btn-add-section" onclick="addRow('tindakan')">+ Tambah</button>
+        </div>
+        <table class="detail-table">
+          <colgroup>
+            <col style="width: 28px;">
+            <col style="width: auto;">
+            <col style="width: 30px;">
+            <col style="width: 120px;">
+            <col style="width: 25px;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="no-col">NO</th>
+              <th>RINCIAN TINDAKAN</th>
+              <th style="text-align: right; padding-right: 4px;" colspan="2">JUMLAH</th>
+              <th class="row-actions"></th>
+            </tr>
+          </thead>
+          <tbody id="bodyTindakan"></tbody>
+        </table>
+      </div>
+
+      <!-- BIAYA KAMAR -->
+      <div class="section-wrapper" id="secRawatInap">
+        <div class="section-header">
+          <span>2. BIAYA KAMAR / AKOMODASI</span>
+          <button type="button" class="btn-add-section" onclick="addRow('rawatInap')">+ Tambah</button>
+        </div>
+        <table class="detail-table">
+          <colgroup>
+            <col style="width: 28px;">
+            <col style="width: auto;">
+            <col style="width: 30px;">
+            <col style="width: 120px;">
+            <col style="width: 25px;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="no-col">NO</th>
+              <th>RINCIAN BIAYA KAMAR / AKOMODASI</th>
+              <th style="text-align: right; padding-right: 4px;" colspan="2">JUMLAH</th>
+              <th class="row-actions"></th>
+            </tr>
+          </thead>
+          <tbody id="bodyRawatInap"></tbody>
+        </table>
+      </div>
+
+      <!-- APOTEK -->
+      <div class="section-wrapper" id="secApotek">
+        <div class="section-header">
+          <span>3. APOTEK</span>
+        </div>
+
+        <div class="subsection-wrapper" id="subApotek">
+          <div class="subsection-header">
+            <span>• OBAT APOTEK</span>
+            <button type="button" class="btn-add-section" onclick="addRow('apotek')">+ Tambah Obat</button>
+          </div>
+          <table class="detail-table">
+            <colgroup>
+              <col style="width: 28px;">
+              <col style="width: auto;">
+              <col style="width: 30px;">
+              <col style="width: 120px;">
+              <col style="width: 25px;">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="no-col">NO</th>
+                <th>APOTEK</th>
+                <th style="text-align: right; padding-right: 4px;" colspan="2">JUMLAH</th>
+                <th class="row-actions"></th>
+              </tr>
+            </thead>
+            <tbody id="bodyApotek"></tbody>
+          </table>
+        </div>
+
+        <div class="subsection-wrapper" id="subResep">
+          <div class="subsection-header">
+            <span>• RINCIAN OBAT / BMHP</span>
+            <button type="button" class="btn-add-section" onclick="addRow('resep')">+ Tambah Rincian</button>
+          </div>
+          <table class="detail-table">
+            <colgroup>
+              <col style="width: auto;">
+              <col style="width: 25px;">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>RINCIAN OBAT / BMHP</th>
+                <th class="row-actions"></th>
+              </tr>
+            </thead>
+            <tbody id="bodyResep"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TOTAL KESELURUHAN -->
+      <table class="detail-table" style="margin-top: 10px;">
+        <colgroup>
+          <col style="width: 28px;">
+          <col style="width: auto;">
+          <col style="width: 30px;">
+          <col style="width: 120px;">
+          <col style="width: 25px;">
+        </colgroup>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="2" style="text-align: center;" class="total-label">TOTAL PEMBAYARAN KESELURUHAN</td>
+            <td style="text-align: right; border-right: none; font-weight: 800; padding-right: 4px; color: var(--text-dark);">Rp</td>
+            <td style="border-left: none; text-align: right;" class="grand-total-val" id="grandTotal">0,00</td>
+            <td class="row-actions"></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="footer-section">
+        <div class="signature-container">
+          <div class="stamp-wrapper">
+            <img id="stampImg" class="stamp-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100'><rect x='5' y='5' width='190' height='90' rx='15' fill='none' stroke='%2330a100' stroke-width='3' stroke-dasharray='6,3'/><text x='100' y='45' font-size='16' font-weight='800' fill='%2330a100' text-anchor='middle'>KLINIK FN 24</text><text x='100' y='68' font-size='12' font-weight='800' fill='%2342c200' text-anchor='middle'>LUNAS / PAID</text></svg>" alt="Stempel">
+          </div>
+          <input type="text" id="receiptDate" class="date-input" value="">
+          <div class="signature-title">ADMINISTRASI</div>
+          <div class="signature-box">
+            <input type="text" id="adminName" class="admin-name-input" value="Ghali">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORM 2: FORM KHUSUS DAFTAR DATA KWITANSI TERSIMPAN -->
+  <div class="app-frame data-frame" id="dataFormFrame" style="display: none;">
+    
+    <!-- KONTROL HEADER FORM DATA -->
+    <div class="control-panel-card" style="margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <h3 style="margin: 0; font-size: 14px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px;">📊 FORM DATA KWITANSI TERSIMPAN</h3>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button class="btn-pill btn-primary-main" type="button" onclick="createNewReceiptFromDataForm()">➕ Kwitansi Baru</button>
+          <button class="btn-pill" type="button" onclick="exportBackup()">📤 Export Backup</button>
+          <button class="btn-pill" type="button" onclick="document.getElementById('importFileInput').click()">📥 Import Backup</button>
+          <button class="btn-pill btn-secondary-main" type="button" onclick="showReceiptForm()">⬅️ Kembali</button>
+        </div>
+      </div>
+
+      <!-- CARI DATA PADA FORM -->
+      <div style="margin-top: 6px;">
+        <input type="text" id="dataFormSearchInput" placeholder="🔍 Cari berdasarkan Nama Pasien atau No. Rekam Medis..." oninput="renderDataFormTable()" style="width: 100%; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.25); color: #fff; padding: 8px 12px; font-size: 11px; font-weight: 600; outline: none;">
+      </div>
+      <!-- Input File Tersembunyi Untuk Import JSON -->
+      <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="importBackup(event)">
+    </div>
+
+    <!-- TABLE DATA KWITANSI -->
+    <div style="background: var(--card-white); border-radius: 16px; padding: 18px; color: var(--text-dark); box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2); overflow-x: auto;">
+      <table class="detail-table" style="width: 100%; table-layout: auto;">
+        <thead>
+          <tr style="background: #f8fafc;">
+            <th style="width: 40px; text-align: center;">NO</th>
+            <th style="min-width: 100px;">NO. RM</th>
+            <th style="min-width: 160px;">NAMA PASIEN</th>
+            <th style="min-width: 130px;">TANGGAL</th>
+            <th style="text-align: right; min-width: 130px;">TOTAL BIAYA</th>
+            <th style="text-align: center; min-width: 120px;">AKSI</th>
+          </tr>
+        </thead>
+        <tbody id="dataFormTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'klinik_fn24_kwitansi_modern_v2';
+    let receiptsData = {};
+    let activeId = null;
+    let saveTimeout = null;
+
+    // Helper untuk efek haptik getaran pada layar sentuh saat tombol ditekan
+    function triggerHapticFeedback() {
+      if (navigator.vibrate) {
+        navigator.vibrate(12);
+      }
+    }
+
+    function togglePanel() {
+      triggerHapticFeedback();
+      const topControlWrapper = document.getElementById('topControlWrapper');
+      topControlWrapper.classList.toggle('panel-hidden');
+    }
+
+    function debouncedSaveData() {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(saveData, 200);
+    }
+
+    function showCustomDialog(options) {
+      const overlay = document.getElementById('customModal');
+      const icon = document.getElementById('modalIcon');
+      const title = document.getElementById('modalTitle');
+      const body = document.getElementById('modalBody');
+      const actions = document.getElementById('modalActions');
+
+      icon.innerText = options.icon || '⚠️';
+      title.innerText = options.title || 'Konfirmasi';
+      body.innerHTML = options.message || '';
+      actions.innerHTML = '';
+
+      if (options.type === 'confirm') {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn-pill btn-secondary-main';
+        cancelBtn.innerText = options.cancelText || 'Batal';
+        cancelBtn.onclick = function() { triggerHapticFeedback(); hideCustomDialog(); if (options.onCancel) options.onCancel(); };
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn-pill ' + (options.danger ? 'btn-delete-main' : 'btn-primary-main');
+        confirmBtn.innerText = options.confirmText || 'Ya, Lanjutkan';
+        confirmBtn.onclick = function() { triggerHapticFeedback(); hideCustomDialog(); if (options.onConfirm) options.onConfirm(); };
+
+        actions.appendChild(cancelBtn);
+        actions.appendChild(confirmBtn);
+      } else {
+        const okBtn = document.createElement('button');
+        okBtn.className = 'btn-pill btn-primary-main';
+        okBtn.innerText = 'OK';
+        okBtn.onclick = function() { triggerHapticFeedback(); hideCustomDialog(); if (options.onConfirm) options.onConfirm(); };
+        actions.appendChild(okBtn);
+      }
+      overlay.classList.add('active');
+    }
+
+    function hideCustomDialog() {
+      document.getElementById('customModal').classList.remove('active');
+    }
+
+    /* PENGALIHAN FORM TAMPILAN DATA & FORM KWITANSI */
+    function showDataForm() {
+      triggerHapticFeedback();
+      if (activeId) receiptsData[activeId] = collectCurrentData();
+      saveData();
+      
+      document.getElementById('receiptAppFrame').style.display = 'none';
+      document.getElementById('dataFormFrame').style.display = 'block';
+      renderDataFormTable();
+    }
+
+    function showReceiptForm() {
+      triggerHapticFeedback();
+      document.getElementById('dataFormFrame').style.display = 'none';
+      document.getElementById('receiptAppFrame').style.display = 'block';
+    }
+
+    function renderDataFormTable() {
+      const tbody = document.getElementById('dataFormTbody');
+      const searchTerm = document.getElementById('dataFormSearchInput').value.toLowerCase().trim();
+      tbody.innerHTML = '';
+
+      let index = 1;
+      let hasData = false;
+
+      for (const id in receiptsData) {
+        const item = receiptsData[id];
+        const rm = (item.patientRm || '').toLowerCase();
+        const name = (item.patientName || '').toLowerCase();
+
+        if (searchTerm !== '' && !rm.includes(searchTerm) && !name.includes(searchTerm)) {
+          continue;
+        }
+
+        hasData = true;
+        let total = 0;
+        ['itemsTindakan', 'itemsRawatInap', 'itemsApotek'].forEach(key => {
+          if (item[key] && Array.isArray(item[key])) {
+            item[key].forEach(i => { total += parseAmount(i.amount); });
+          }
+        });
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="text-align:center;">${index++}</td>
+          <td><b>${item.patientRm || '-'}</b></td>
+          <td><b>${item.patientName || 'Tanpa Nama'}</b></td>
+          <td>${item.receiptDate || '-'}</td>
+          <td style="text-align:right; font-weight:800; color:var(--accent-green);">Rp ${formatIndoCurrency(total)}</td>
+          <td style="text-align:center;">
+            <div style="display:flex; justify-content:center; gap:4px;">
+              <button class="btn-pill btn-primary-main" style="height:26px; padding:0 8px; font-size:9px;" onclick="selectReceiptFromDataForm('${id}')">✏️ Buka</button>
+              <button class="btn-pill btn-delete-main" style="height:26px; padding:0 8px; font-size:9px;" onclick="deleteReceiptFromDataForm('${id}')">🗑️ Hapus</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      if (!hasData) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 16px; color: var(--text-muted);">Data kwitansi tidak ditemukan.</td></tr>`;
+      }
+    }
+
+    function selectReceiptFromDataForm(id) {
+      triggerHapticFeedback();
+      switchReceipt(id);
+      showReceiptForm();
+    }
+
+    function deleteReceiptFromDataForm(id) {
+      triggerHapticFeedback();
+      if (Object.keys(receiptsData).length <= 1) {
+        showCustomDialog({ type: 'alert', icon: '⚠️', title: 'PERINGATAN', message: 'Minimal harus ada 1 kwitansi aktif.' });
+        return;
+      }
+      showCustomDialog({
+        type: 'confirm', icon: '🗑️', title: 'HAPUS KWITANSI', message: 'Apakah Anda yakin ingin menghapus kwitansi ini?', danger: true, confirmText: 'Ya, Hapus',
+        onConfirm: function() {
+          delete receiptsData[id];
+          if (activeId === id) {
+            activeId = Object.keys(receiptsData)[0];
+            loadReceipt(activeId);
+          }
+          saveData();
+          renderDataFormTable();
+        }
+      });
+    }
+
+    function createNewReceiptFromDataForm() {
+      triggerHapticFeedback();
+      createNewReceipt();
+      showReceiptForm();
+    }
+
+    function getRealtimeDateIndo() {
+      const bulanIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      const now = new Date();
+      return `Serui, ${now.getDate()} ${bulanIndo[now.getMonth()]} ${now.getFullYear()}`;
+    }
+
+    function terbilang(angka) {
+      if (isNaN(angka) || angka === null) return "Nol";
+      
+      const huruf = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+      
+      let bagianBulat = Math.floor(Math.abs(angka));
+      let bagianDesimal = Math.round((Math.abs(angka) - bagianBulat) * 100);
+
+      function konversi(n) {
+        if (n < 12) return huruf[n];
+        else if (n < 20) return konversi(n - 10) + " Belas";
+        else if (n < 100) return konversi(Math.floor(n / 10)) + " Puluh" + (n % 10 !== 0 ? " " + konversi(n % 10) : "");
+        else if (n < 1000) return "Seratus" + (n % 100 !== 0 ? " " + konversi(n % 100) : "");
+        else if (n < 1000) return konversi(Math.floor(n / 100)) + " Ratus" + (n % 100 !== 0 ? " " + konversi(n % 100) : "");
+        else if (n < 2000) return "Seribu" + (n % 1000 !== 0 ? " " + konversi(n % 1000) : "");
+        else if (n < 1000000) return konversi(Math.floor(n / 1000)) + " Ribu" + (n % 1000 !== 0 ? " " + konversi(n % 1000) : "");
+        else if (n < 1000000000) return konversi(Math.floor(n / 1000000)) + " Juta" + (n % 1000000 !== 0 ? " " + konversi(n % 1000000) : "");
+        else if (n < 1000000000000) return konversi(Math.floor(n / 1000000000)) + " Milyar" + (n % 1000000000 !== 0 ? " " + konversi(n % 1000000000) : "");
+        else if (n < 1000000000000000) return konversi(Math.floor(n / 1000000000000)) + " Triliun" + (n % 1000000000000 !== 0 ? " " + konversi(n % 1000000000000) : "");
+        return "";
+      }
+
+      let hasil = bagianBulat === 0 ? "Nol" : konversi(bagianBulat).replace(/\s+/g, ' ').trim();
+      
+      if (bagianDesimal > 0) {
+        hasil += " Koma " + konversi(bagianDesimal).replace(/\s+/g, ' ').trim() + " Sen";
+      }
+
+      return hasil;
+    }
+
+    function parseAmount(val) {
+      if (!val) return 0;
+      let str = val.toString().trim();
+      if (str.includes('.') && str.includes(',')) str = str.replace(/\./g, '').replace(',', '.');
+      else if (str.includes(',')) str = str.replace(',', '.');
+      else if (str.includes('.')) str = str.replace(/\./g, '');
+      return parseFloat(str) || 0;
+    }
+
+    function formatIndoCurrency(val) {
+      return val.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function unformatAmount(input) {
+      let numericVal = parseAmount(input.value);
+      input.value = numericVal === 0 ? '' : numericVal;
+    }
+
+    function formatAmount(input) {
+      let numericVal = parseAmount(input.value);
+      input.value = formatIndoCurrency(numericVal);
+      calculateTotal();
+      debouncedSaveData();
+    }
+
+    function calculateTotal() {
+      const inputs = document.querySelectorAll('.amount-input');
+      let total = 0;
+      inputs.forEach(input => { total += parseAmount(input.value); });
+      document.getElementById('grandTotal').innerText = formatIndoCurrency(total);
+      
+      const terbilangStr = terbilang(total);
+      document.getElementById('terbilangText').innerText = total === 0 ? "Nol Rupiah" : terbilangStr + " Rupiah";
+    }
+
+    function addRow(category, itemValue = "", amountValue = "0,00", shouldFocus = false) {
+      let tbodyId = 'bodyTindakan';
+      if (category === 'rawatInap') tbodyId = 'bodyRawatInap';
+      else if (category === 'apotek') tbodyId = 'bodyApotek';
+      else if (category === 'resep') tbodyId = 'bodyResep';
+
+      const tbody = document.getElementById(tbodyId);
+      const tr = document.createElement('tr');
+
+      if (category === 'resep') {
+        tr.innerHTML = `
+          <td><input type="text" class="item-input" value="${itemValue}" placeholder="Rincian obat / BMHP..." oninput="debouncedSaveData()"></td>
+          <td class="row-actions"><button class="btn-del-row" type="button" onclick="removeRow(this)">✕</button></td>
+        `;
+      } else {
+        tr.innerHTML = `
+          <td class="no-col row-number"></td>
+          <td><input type="text" class="item-input" value="${itemValue}" placeholder="Keterangan rincian..." oninput="debouncedSaveData()"></td>
+          <td style="text-align: right; border-right: none; font-weight: 800; color: var(--text-dark); padding-right: 4px;">Rp</td>
+          <td style="border-left: none;">
+            <input type="text" class="amount-input" value="${amountValue}" onfocus="unformatAmount(this)" onblur="formatAmount(this)" oninput="calculateTotal(); debouncedSaveData();">
+          </td>
+          <td class="row-actions"><button class="btn-del-row" type="button" onclick="removeRow(this)">✕</button></td>
+        `;
+      }
+
+      tbody.appendChild(tr);
+      updateRowNumbers(tbodyId);
+      calculateTotal();
+      debouncedSaveData();
+
+      if (shouldFocus) {
+        const newInput = tr.querySelector('.item-input');
+        if (newInput) newInput.focus();
+      }
+    }
+
+    function removeRow(btn) {
+      triggerHapticFeedback();
+      const tbody = btn.closest('tbody');
+      btn.closest('tr').remove();
+      if (tbody) updateRowNumbers(tbody.id);
+      calculateTotal();
+      debouncedSaveData();
+    }
+
+    function updateRowNumbers(tbodyId) {
+      const tbody = document.getElementById(tbodyId);
+      if (tbody) {
+        tbody.querySelectorAll('.row-number').forEach((td, index) => { td.innerText = index + 1; });
+      }
+    }
+
+    function getItemsFromSection(tbodyId) {
+      const items = [];
+      document.querySelectorAll(`#${tbodyId} tr`).forEach(row => {
+        const itemInput = row.querySelector('.item-input');
+        const amountInput = row.querySelector('.amount-input');
+        if (itemInput) {
+          items.push({ 
+            item: itemInput.value, 
+            amount: amountInput ? amountInput.value : "" 
+          });
+        }
+      });
+      return items;
+    }
+
+    function collectCurrentData() {
+      const patient = document.getElementById('patientName').value.trim();
+      const rm = document.getElementById('patientRm').value.trim();
+      
+      let title = patient !== "" ? patient : (rm !== "" ? `RM: ${rm}` : "Kwitansi Tanpa Nama");
+
+      return {
+        title: title,
+        clinicTitle: document.getElementById('clinicTitle').value,
+        clinicAddress: document.getElementById('clinicAddress').value,
+        patientRm: document.getElementById('patientRm').value,
+        patientName: document.getElementById('patientName').value,
+        receiptDate: document.getElementById('receiptDate').value,
+        adminName: document.getElementById('adminName').value,
+        stampSize: document.getElementById('stampSize').value,
+        watermarkOpacity: document.getElementById('watermarkOpacity').value,
+        watermarkSize: document.getElementById('watermarkSize').value,
+        logoSrc: document.getElementById('logoImg').src,
+        watermarkSrc: document.getElementById('watermarkImg').src,
+        stampSrc: document.getElementById('stampImg').src,
+        itemsTindakan: getItemsFromSection('bodyTindakan'),
+        itemsRawatInap: getItemsFromSection('bodyRawatInap'),
+        itemsApotek: getItemsFromSection('bodyApotek'),
+        itemsResep: getItemsFromSection('bodyResep')
+      };
+    }
+
+    function saveData() {
+      if (!activeId) return;
+      receiptsData[activeId] = collectCurrentData();
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ activeId: activeId, receipts: receiptsData })); } catch (err) {}
+      updateSelectDropdown(false);
+    }
+
+    function updateSelectDropdown(rebuild = true) {
+      const select = document.getElementById('receiptSelect');
+      if (rebuild) {
+        select.innerHTML = '';
+        for (const id in receiptsData) {
+          const opt = document.createElement('option');
+          opt.value = id; opt.innerText = receiptsData[id].title || `Kwitansi ${id}`;
+          select.appendChild(opt);
+        }
+      } else {
+        for (let i = 0; i < select.options.length; i++) {
+          const opt = select.options[i];
+          if (receiptsData[opt.value]) opt.innerText = receiptsData[opt.value].title || `Kwitansi ${opt.value}`;
+        }
+      }
+      select.value = activeId;
+    }
+
+    // UPDATE STATUS INDIKATOR EFEK KLIK DENGAN UMPAN BALIK PADA TOMBOL UNGGAH
+    function updateUploadButtonUI(btnUiId, btnTextId, btnIconId, defaultText, isCustomUploaded) {
+      const btnUI = document.getElementById(btnUiId);
+      const btnText = document.getElementById(btnTextId);
+      const btnIcon = document.getElementById(btnIconId);
+
+      if (isCustomUploaded) {
+        btnUI.classList.add('has-file');
+        btnText.innerText = defaultText + ' ✓';
+        btnIcon.innerText = '✅';
+      } else {
+        btnUI.classList.remove('has-file');
+        btnText.innerText = defaultText;
+        btnIcon.innerText = btnUiId.includes('watermark') ? '🖼️' : '📁';
+      }
+    }
+
+    function loadReceipt(id) {
+      if (!receiptsData[id]) return;
+      if (activeId && activeId !== id && receiptsData[activeId]) receiptsData[activeId] = collectCurrentData();
+
+      activeId = id;
+      const data = receiptsData[id];
+      document.getElementById('clinicTitle').value = data.clinicTitle || "KLINIK UTAMA FN 24";
+      document.getElementById('clinicAddress').value = data.clinicAddress || "";
+      document.getElementById('patientRm').value = data.patientRm || "";
+      document.getElementById('patientName').value = data.patientName || "";
+      document.getElementById('receiptDate').value = data.receiptDate || getRealtimeDateIndo();
+      document.getElementById('adminName').value = data.adminName || "Ghali";
+      
+      const stampSizeVal = data.stampSize || "110";
+      document.getElementById('stampSize').value = stampSizeVal;
+      document.getElementById('stampImg').style.width = stampSizeVal + 'px';
+
+      const wmOpacityVal = data.watermarkOpacity !== undefined ? data.watermarkOpacity : "0.05";
+      document.getElementById('watermarkOpacity').value = wmOpacityVal;
+      document.getElementById('watermarkImg').style.opacity = wmOpacityVal;
+
+      const wmSizeVal = data.watermarkSize || "100";
+      document.getElementById('watermarkSize').value = wmSizeVal;
+      const wmWrapper = document.getElementById('watermarkWrapper');
+      wmWrapper.style.width = wmSizeVal + '%'; wmWrapper.style.height = wmSizeVal + '%';
+
+      if (data.logoSrc) document.getElementById('logoImg').src = data.logoSrc;
+      if (data.watermarkSrc) document.getElementById('watermarkImg').src = data.watermarkSrc;
+      if (data.stampSrc) document.getElementById('stampImg').src = data.stampSrc;
+
+      // Update tampilan visual indikator status unggah tombol
+      updateUploadButtonUI('logoBtnUI', 'logoBtnText', 'logoBtnIcon', 'Logo ', data.logoSrc && !data.logoSrc.startsWith('data:image/svg+xml'));
+      updateUploadButtonUI('watermarkBtnUI', 'watermarkBtnText', 'watermarkBtnIcon', 'Watermark ', data.watermarkSrc && !data.watermarkSrc.startsWith('data:image/svg+xml'));
+      updateUploadButtonUI('stampBtnUI', 'stampBtnText', 'stampBtnIcon', 'Stempel ', data.stampSrc && !data.stampSrc.startsWith('data:image/svg+xml'));
+
+      ['bodyTindakan', 'bodyRawatInap', 'bodyApotek', 'bodyResep'].forEach(tbodyId => {
+        document.getElementById(tbodyId).innerHTML = '';
+      });
+
+      if (data.itemsTindakan && data.itemsTindakan.length > 0) {
+        data.itemsTindakan.forEach(row => { addRow('tindakan', row.item, row.amount); });
+      } else {
+        addRow('tindakan', "", "0,00");
+      }
+
+      if (data.itemsRawatInap && data.itemsRawatInap.length > 0) {
+        data.itemsRawatInap.forEach(row => { addRow('rawatInap', row.item, row.amount); });
+      } else {
+        addRow('rawatInap', "", "0,00");
+      }
+
+      if (data.itemsApotek && data.itemsApotek.length > 0) {
+        data.itemsApotek.forEach(row => { addRow('apotek', row.item, row.amount); });
+      } else {
+        addRow('apotek', "", "0,00");
+      }
+
+      if (data.itemsResep && data.itemsResep.length > 0) {
+        data.itemsResep.forEach(row => { addRow('resep', row.item); });
+      } else {
+        addRow('resep', "");
+      }
+
+      calculateTotal();
+      updateSelectDropdown(true);
+    }
+
+    function switchReceipt(id) {
+      triggerHapticFeedback();
+      if (id && receiptsData[id]) {
+        loadReceipt(id);
+        saveData();
+      }
+    }
+
+    function createNewReceipt() {
+      triggerHapticFeedback();
+      if (activeId) receiptsData[activeId] = collectCurrentData();
+      const currentData = receiptsData[activeId] || {};
+      const newId = 'kw_' + Date.now();
+
+      receiptsData[newId] = {
+        title: "Kwitansi Baru",
+        clinicTitle: currentData.clinicTitle || "KLINIK UTAMA FN 24",
+        clinicAddress: currentData.clinicAddress || "",
+        patientRm: "",
+        patientName: "", receiptDate: getRealtimeDateIndo(), adminName: currentData.adminName || "Ghali",
+        stampSize: currentData.stampSize || "110", watermarkOpacity: currentData.watermarkOpacity || "0.05", watermarkSize: currentData.watermarkSize || "100",
+        logoSrc: currentData.logoSrc || document.getElementById('logoImg').src,
+        watermarkSrc: currentData.watermarkSrc || document.getElementById('watermarkImg').src,
+        stampSrc: currentData.stampSrc || document.getElementById('stampImg').src,
+        itemsTindakan: [{ item: "", amount: "0,00" }],
+        itemsRawatInap: [{ item: "", amount: "0,00" }],
+        itemsApotek: [{ item: "", amount: "0,00" }],
+        itemsResep: [{ item: "" }]
+      };
+      loadReceipt(newId); 
+      saveData();
+    }
+
+    function deleteCurrentReceipt() {
+      triggerHapticFeedback();
+      if (Object.keys(receiptsData).length <= 1) {
+        showCustomDialog({ type: 'alert', icon: '⚠️', title: 'PERINGATAN', message: 'Minimal harus ada 1 kwitansi aktif.' });
+        return;
+      }
+      showCustomDialog({
+        type: 'confirm', icon: '🗑️', title: 'HAPUS KWITANSI', message: 'Apakah Anda yakin ingin menghapus kwitansi ini?', danger: true, confirmText: 'Ya, Hapus',
+        onConfirm: function() {
+          delete receiptsData[activeId];
+          loadReceipt(Object.keys(receiptsData)[0]);
+          saveData();
+        }
+      });
+    }
+
+    function confirmResetAll() {
+      triggerHapticFeedback();
+      showCustomDialog({
+        type: 'confirm', icon: '🚨', title: 'RESET SISTEM', message: 'Tindakan ini akan menghapus SELURUH data kwitansi.<br><br>Apakah Anda yakin?', danger: true, confirmText: 'Reset Sekarang',
+        onConfirm: function() {
+          localStorage.removeItem(STORAGE_KEY);
+          receiptsData = {};
+          const defaultId = 'kw_' + Date.now();
+          receiptsData[defaultId] = {
+            title: "Kwitansi Utama", clinicTitle: "KLINIK UTAMA FN 24", clinicAddress: "JL. Silas Papare Serui – Papua • admin@klinikfn24.com • 0811498548",
+            patientRm: "", patientName: "", receiptDate: getRealtimeDateIndo(), adminName: "Ghali", stampSize: "110", watermarkOpacity: "0.05", watermarkSize: "100",
+            itemsTindakan: [{ item: "", amount: "0,00" }],
+            itemsRawatInap: [{ item: "", amount: "0,00" }],
+            itemsApotek: [{ item: "", amount: "0,00" }],
+            itemsResep: [{ item: "" }]
+          };
+          loadReceipt(defaultId); 
+          saveData();
+        }
+      });
+    }
+
+    function searchByRm() {
+      triggerHapticFeedback();
+      const searchRm = document.getElementById('searchRmInput').value.trim();
+      
+      if (!searchRm) {
+        showCustomDialog({ 
+          type: 'alert', 
+          icon: '⚠️', 
+          title: 'PERINGATAN', 
+          message: 'Silakan masukkan Nomor RM yang ingin dicari.' 
+        });
+        return;
+      }
+
+      if (activeId) receiptsData[activeId] = collectCurrentData();
+
+      let foundId = null;
+      for (const id in receiptsData) {
+        if (receiptsData[id].patientRm && receiptsData[id].patientRm.toLowerCase() === searchRm.toLowerCase()) {
+          foundId = id;
+          break;
+        }
+      }
+
+      if (foundId) {
+        loadReceipt(foundId);
+        showCustomDialog({ 
+          type: 'alert', 
+          icon: '✅', 
+          title: 'DITEMUKAN', 
+          message: `Data kwitansi dengan No. RM <b>"${searchRm}"</b> berhasil dimuat.` 
+        });
+      } else {
+        showCustomDialog({ 
+          type: 'alert', 
+          icon: '❌', 
+          title: 'TIDAK DITEMUKAN', 
+          message: `Nomor RM <b>"${searchRm}"</b> tidak ditemukan dalam penyimpanan lokal!` 
+        });
+      }
+    }
+
+    async function exportBackup() {
+      triggerHapticFeedback();
+      if (activeId) receiptsData[activeId] = collectCurrentData();
+      
+      const jsonString = JSON.stringify(receiptsData, null, 2);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const defaultFileName = `Backup_Kwitansi_FN24_${dateStr}.json`;
+
+      if ('showSaveFilePicker' in window) {
+        try {
+          const options = {
+            suggestedName: defaultFileName,
+            types: [{
+              description: 'JSON Backup File',
+              accept: { 'application/json': ['.json'] },
+            }],
+          };
+          
+          const handle = await window.showSaveFilePicker(options);
+          const writable = await handle.createWritable();
+          await writable.write(jsonString);
+          await writable.close();
+
+          showCustomDialog({
+            type: 'alert',
+            icon: '✅',
+            title: 'BACKUP BERHASIL',
+            message: 'File cadangan telah berhasil disimpan ke folder pilihan Anda.'
+          });
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            showCustomDialog({
+              type: 'alert',
+              icon: '❌',
+              title: 'GAGAL BACKUP',
+              message: 'Terjadi kesalahan saat menyimpan file: ' + err.message
+            });
+          }
+        }
+      } else {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
+        const downloadAnchor = document.createElement('a');
+        
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", defaultFileName);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+
+        showCustomDialog({
+          type: 'alert',
+          icon: '✅',
+          title: 'BACKUP BERHASIL',
+          message: 'File cadangan seluruh data kwitansi telah berhasil diunduh.'
+        });
+      }
+    }
+
+    function importBackup(event) {
+      triggerHapticFeedback();
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          if (typeof importedData === 'object' && importedData !== null && Object.keys(importedData).length > 0) {
+            receiptsData = importedData;
+            activeId = Object.keys(receiptsData)[0];
+            saveData();
+            loadReceipt(activeId);
+            
+            if (document.getElementById('dataFormFrame').style.display === 'block') {
+              renderDataFormTable();
+            }
+
+            showCustomDialog({
+              type: 'alert',
+              icon: '✅',
+              title: 'RESTORE BERHASIL',
+              message: `Berhasil mengembalikan ${Object.keys(receiptsData).length} data kwitansi ke dalam sistem.`
+            });
+          } else {
+            throw new Error("Format file JSON tidak valid.");
+          }
+        } catch (err) {
+          showCustomDialog({
+            type: 'alert',
+            icon: '❌',
+            title: 'GAGAL RESTORE',
+            message: 'File yang diunggah bukan merupakan file cadangan kwitansi yang valid.'
+          });
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function preparePrintView() {
+      const checkAndToggle = (tbodyId, containerId, isAmountTable = true) => {
+        const tbody = document.getElementById(tbodyId);
+        const container = document.getElementById(containerId);
+        let hasValidData = false;
+
+        if (tbody) {
+          const rows = tbody.querySelectorAll('tr');
+          rows.forEach(row => {
+            const itemVal = row.querySelector('.item-input')?.value.trim() || "";
+            const amountVal = isAmountTable ? parseAmount(row.querySelector('.amount-input')?.value) : 0;
+            
+            if (itemVal !== "" || (isAmountTable && amountVal > 0)) {
+              hasValidData = true;
+              row.classList.remove('empty-print-hide');
+            } else {
+              row.classList.add('empty-print-hide');
+            }
+          });
+        }
+
+        if (container) {
+          if (hasValidData) container.classList.remove('empty-print-hide');
+          else container.classList.add('empty-print-hide');
+        }
+        return hasValidData;
+      };
+
+      checkAndToggle('bodyTindakan', 'secTindakan', true);
+      checkAndToggle('bodyRawatInap', 'secRawatInap', true);
+      const hasApotek = checkAndToggle('bodyApotek', 'subApotek', true);
+      const hasResep = checkAndToggle('bodyResep', 'subResep', false);
+
+      const secApotek = document.getElementById('secApotek');
+      if (secApotek) {
+        if (hasApotek || hasResep) secApotek.classList.remove('empty-print-hide');
+        else secApotek.classList.add('empty-print-hide');
+      }
+
+      let printCounter = 1;
+      ['bodyTindakan', 'bodyRawatInap', 'bodyApotek'].forEach(tbodyId => {
+        const tbody = document.getElementById(tbodyId);
+        if (tbody) {
+          const rows = tbody.querySelectorAll('tr:not(.empty-print-hide)');
+          rows.forEach(row => {
+            const noTd = row.querySelector('.row-number');
+            if (noTd) noTd.innerText = printCounter++;
+          });
+        }
+      });
+    }
+
+    function restorePrintView() {
+      document.querySelectorAll('.empty-print-hide').forEach(el => {
+        el.classList.remove('empty-print-hide');
+      });
+
+      updateRowNumbers('bodyTindakan');
+      updateRowNumbers('bodyRawatInap');
+      updateRowNumbers('bodyApotek');
+    }
+
+    window.onbeforeprint = preparePrintView;
+    window.onafterprint = restorePrintView;
+
+    document.getElementById('btnPrintAction').addEventListener('click', function(e) {
+      e.preventDefault();
+      triggerHapticFeedback();
+      preparePrintView();
+      window.print();
+      restorePrintView();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const target = e.target;
+        if (target.id === 'searchRmInput') {
+          e.preventDefault();
+          searchByRm();
+          return;
+        }
+        if (target.classList.contains('item-input') || target.classList.contains('amount-input')) {
+          e.preventDefault();
+          const tbody = target.closest('tbody');
+          if (!tbody) return;
+
+          let category = 'tindakan';
+          if (tbody.id === 'bodyRawatInap') category = 'rawatInap';
+          else if (tbody.id === 'bodyApotek') category = 'apotek';
+          else if (tbody.id === 'bodyResep') category = 'resep';
+
+          addRow(category, "", "0,00", true);
+        }
+      }
+    });
+
+    document.addEventListener('input', function(e) {
+      if ((e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') && e.target.id !== 'receiptSelect' && e.target.id !== 'searchRmInput' && e.target.id !== 'dataFormSearchInput') {
+        debouncedSaveData();
+      }
+    });
+
+    /* PENANGANAN EVENT UNGGAH GAMBAR DENGAN REAKSI EFEK KLIK & AMAN */
+    ['logoInput', 'watermarkInput', 'stampInput'].forEach((inputId, idx) => {
+      document.getElementById(inputId).addEventListener('change', function(e) {
+        triggerHapticFeedback();
+        if (e.target.files && e.target.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            const targetImg = idx === 0 ? 'logoImg' : (idx === 1 ? 'watermarkImg' : 'stampImg');
+            document.getElementById(targetImg).src = evt.target.result;
+            
+            // Perbarui visual tombol unggah secara langsung
+            if (idx === 0) updateUploadButtonUI('logoBtnUI', 'logoBtnText', 'logoBtnIcon', 'Logo Terunggah', true);
+            else if (idx === 1) updateUploadButtonUI('watermarkBtnUI', 'watermarkBtnText', 'watermarkBtnIcon', 'Watermark Terunggah', true);
+            else if (idx === 2) updateUploadButtonUI('stampBtnUI', 'stampBtnText', 'stampBtnIcon', 'Stempel Terunggah', true);
+
+            debouncedSaveData();
+          }
+          reader.readAsDataURL(e.target.files[0]);
+        }
+      });
+    });
+
+    document.getElementById('watermarkOpacity').addEventListener('input', function(e) {
+      document.getElementById('watermarkImg').style.opacity = e.target.value; 
+      debouncedSaveData();
+    });
+    document.getElementById('watermarkSize').addEventListener('input', function(e) {
+      const val = e.target.value + '%';
+      const wmWrapper = document.getElementById('watermarkWrapper');
+      wmWrapper.style.width = val; 
+      wmWrapper.style.height = val; 
+      debouncedSaveData();
+    });
+    document.getElementById('stampSize').addEventListener('input', function(e) {
+      document.getElementById('stampImg').style.width = e.target.value + 'px'; 
+      debouncedSaveData();
+    });
+
+    window.addEventListener('DOMContentLoaded', function() {
+      let loaded = false;
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.receipts && Object.keys(parsed.receipts).length > 0) {
+            receiptsData = parsed.receipts;
+            activeId = parsed.activeId && receiptsData[parsed.activeId] ? parsed.activeId : Object.keys(receiptsData)[0];
+            loaded = true;
+          }
+        }
+      } catch (e) {}
+
+      if (!loaded) {
+        const defaultId = 'kw_' + Date.now();
+        receiptsData[defaultId] = {
+          title: "Kwitansi Utama", clinicTitle: "KLINIK UTAMA FN 24", clinicAddress: "JL. Silas Papare Serui – Papua • admin@klinikfn24.com • 0811498548",
+          patientRm: "", patientName: "", receiptDate: getRealtimeDateIndo(), adminName: "Ghali", stampSize: "110", watermarkOpacity: "0.05", watermarkSize: "100",
+          itemsTindakan: [{ item: "", amount: "0,00" }],
+          itemsRawatInap: [{ item: "", amount: "0,00" }],
+          itemsApotek: [{ item: "", amount: "0,00" }],
+          itemsResep: [{ item: "" }]
+        };
+        activeId = defaultId;
+      }
+
+      loadReceipt(activeId);
+    });
+  </script>
+</body>
+</html>
